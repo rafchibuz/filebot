@@ -21,10 +21,9 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
     f.SetActiveSheet(idx)
     headers := []string{
       "VIN",
-      "Модель",
-      "Дата ДКП",
-      "Дата акта приема-передачи",
-      "Наименование продавца (ДКП)",
+      "Коммерческое наименование",
+      "Дата ДКП (MM/DD/YYYY)",
+      "Продавец",
     }
     for i, h := range headers {
       cell, _ := excelize.CoordinatesToCellName(i+1, 1)
@@ -57,9 +56,8 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
 
   values := []any{
     info.VIN,
-    info.VehicleModel,
-    info.ContractDate,
-    info.ActDate,
+    info.CommercialName,
+    info.ContractDateUS,
     info.SellerCompanyDKP,
   }
 

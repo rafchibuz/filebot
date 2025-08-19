@@ -4,13 +4,13 @@
   "excelSheet": "Data",
   "web": { "address": ":8080" },
   "patterns": {
-    "contractDatePattern": "(?i)договор[^\\n\\r\\d]{0,80}",
-    "actDatePattern": "(?i)акт[^\\n\\r\\d]{0,80}",
-    "dateRegex": "(?m)(\\b\\d{2}[\\./-]\\d{2}[\\./-]\\d{4}\\b)",
+    "contractDateContextPattern": "(?i)(договор[а-я\\s-]*лизинга|дкп|договор\\s+купли-?продажи)[^\\n\\r\\d]{0,120}",
+    "dateRegex": "(?m)(\\b\\d{1,2}[\\./-]\\d{1,2}[\\./-]\\d{2,4}\\b|\\b\\d{1,2}\\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\\s+\\d{4}\\b)",
 
     "vinPattern": "(?i)vin[:\\s-]*",
     "vinRegex": "(?i)\\b[ABCDEFGHJKLMNPRSTUVWXYZ\\d]{17}\\b",
-    "vehicleModelPattern": "(?i)(модель|model)[:\\s-]*([^\\n\\r]{1,80})",
-    "sellerCompanyDKPPattern": "(?i)(продавец|продавца)[^\\n\\r]{0,10}[:\\s-]*([^\\n\\r]{1,160})"
+
+    "commercialNamePattern": "(?i)(коммерческое\\s+наименование)[:\\s-]*([^\\n\\r]{1,120})",
+    "sellerCompanyDKPPattern": "(?i)(продавец|продавца)[^\\n\\r]{0,10}[:\\s-]*([^\\n\\r]{1,200})"
   }
 } 

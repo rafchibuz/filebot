@@ -76,7 +76,6 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  // Read only the first file text
   var firstText string
   for idx, fh := range files {
     if idx > 0 { break }
