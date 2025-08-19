@@ -23,17 +23,14 @@ func ParseFirstFileOnly(firstFileText string, cfg config.Config) models.Extracte
   contractDateRaw := findDateNear(t, cfg.Patterns.ContractDateContextPattern, reDate)
   contractDateUS := toUSDate(contractDateRaw)
 
-  // Commercial name: capture second regex group
+  // Commercial name: capture second regex group, then take the first token (e.g., "GS3")
   var commercialName string
   if m := regexp.MustCompile(cfg.Patterns.CommercialNamePattern).FindStringSubmatch(t); len(m) >= 3 {
-    commercialName = strings.TrimSpace(m[2])
+    commercialName = extractFirstToken(m[2])
   }
 
-  // Seller company (DKP): capture second group and trim tail
-  var sellerCompanyDKP string
-  if m := regexp.MustCompile(cfg.Patterns.SellerCompanyDKPPattern).FindStringSubmatch(t); len(m) >= 3 {
-    sellerCompanyDKP = strings.TrimSpace(cleanCompanyTail(m[2]))
-  }
+  // Seller company (DKP): prefer entity immediately before «Продавец» phrase
+  sellerCompanyDKP := findSellerCompany(t, cfg)
 
   return models.ExtractedInfo{
     VIN:              vin,
@@ -43,16 +40,46 @@ func ParseFirstFileOnly(firstFileText string, cfg config.Config) models.Extracte
   }
 }
 
+func extractFirstToken(s string) string {
+  s = strings.TrimSpace(s)
+  s = strings.Trim(s, "\"“”«»")
+  re := regexp.MustCompile(`^([A-Za-zА-Яа-я0-9\-]+)`) // first word like GS3, Q5, etc.
+  if m := re.FindStringSubmatch(s); len(m) >= 2 {
+    return m[1]
+  }
+  // fallback: take until first space
+  if idx := strings.IndexByte(s, ' '); idx > 0 {
+    return s[:idx]
+  }
+  return s
+}
+
+func findSellerCompany(t string, cfg config.Config) string {
+  // Pattern: <Company>, именуемое(ый) в дальнейшем «Продавец»
+  // Company like: ООО "Авто-Престиж", АО Компания, ПАО "...", ИП Иванов И.И.
+  reBefore := regexp.MustCompile(`(?i)((?:ООО|АО|ПАО|ЗАО|ОАО|ИП)\s+"?[A-Za-zА-Яа-я0-9\-\s\.]+"?)\s*,\s*именуем[а-я\s]*в\s+дальнейшем\s+«?продавец`)
+  if m := reBefore.FindStringSubmatch(t); len(m) >= 2 {
+    return cleanCompanyTail(m[1])
+  }
+  // Fallback: use configured pattern (captures after label), then clean
+  if m := regexp.MustCompile(cfg.Patterns.SellerCompanyDKPPattern).FindStringSubmatch(t); len(m) >= 3 {
+    return strings.TrimSpace(cleanCompanyTail(m[2]))
+  }
+  return ""
+}
+
 func cleanCompanyTail(s string) string {
   s = strings.TrimSpace(s)
-  stops := []string{"ИНН", "КПП", "ОГРН", "адрес", "тел", "e-mail", "Эл. почта"}
+  s = strings.Trim(s, "\"“”«»")
+  // Cut off common trailing markers
+  stops := []string{"ИНН", "КПП", "ОГРН", "адрес", "тел", "e-mail", "Эл. почта", "именуем"}
   stopIdx := len(s)
   for _, stop := range stops {
     if idx := strings.Index(strings.ToLower(s), strings.ToLower(stop)); idx > 0 && idx < stopIdx {
       stopIdx = idx
     }
   }
-  return strings.TrimSpace(s[:stopIdx])
+  return strings.TrimSpace(strings.Trim(s[:stopIdx], ", "))
 }
 
 func findDateNear(text string, beforePattern string, reDate *regexp.Regexp) string {
@@ -105,9 +132,7 @@ func toUSDate(s string) string {
     monName := strings.ToLower(parts[1])
     year := parts[2]
     if mon, ok := ruMonths[monName]; ok {
-      // Normalize day to two digits
       if len(day) == 1 { day = "0" + day }
-      // Build time and format
       composed := fmt.Sprintf("%s.%02d.%s", day, mon, year)
       if t, err := time.Parse("02.01.2006", composed); err == nil {
         return t.Format("01/02/2006")
