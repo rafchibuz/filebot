@@ -30,6 +30,14 @@ type Patterns struct {
   PoAToPattern        string `json:"poaToPattern"`
   DateRegex           string `json:"dateRegex"`
   NameRegex           string `json:"nameRegex"`
+
+  // New patterns
+  AmountPattern       string `json:"amountPattern"`
+  AmountRegex         string `json:"amountRegex"`
+  VINPattern          string `json:"vinPattern"`
+  VINRegex            string `json:"vinRegex"`
+  PtsDatePattern      string `json:"ptsDatePattern"`
+  BuyerCompanyPattern string `json:"buyerCompanyPattern"`
 }
 
 // Default returns the built-in defaults used if config.json is missing or partial.
@@ -48,8 +56,15 @@ func Default() Config {
       SellerLabelPattern:  `(?i)продавц[а|е]:?`,
       PoAFromPattern:      `(?i)доверенн(?:ость|ости|остью)[^\n\r]{0,80}от`,
       PoAToPattern:        `(?i)действи[еия][^\n\r]{0,80}до`,
-      DateRegex:           `(?m)(\\b\\d{2}[\\./-]\\d{2}[\\./-]\\d{4}\\b)`,
-      NameRegex:           `(?m)([А-ЯЁ][а-яё]+(?:\\s+[А-ЯЁ][а-яё]+){0,2}(?:\\s+[А-ЯЁ]\\.[А-ЯЁ]\\.)?)`,
+      DateRegex:           `(?m)(\b\d{2}[\./-]\d{2}[\./-]\d{4}\b)`,
+      NameRegex:           `(?m)([А-ЯЁ][а-яё]+(?:\s+[А-ЯЁ][а-яё]+){0,2}(?:\s+[А-ЯЁ]\.[А-ЯЁ]\.)?)`,
+
+      AmountPattern:       `(?i)общая\s+сумма\s+договора[^\n\r\d]{0,80}`,
+      AmountRegex:         `(?m)(\b\d{1,3}(?:[\s\u00a0]\d{3})*(?:[\.,]\d{2})\b)`,
+      VINPattern:          `(?i)vin[:\s-]*`,
+      VINRegex:            `(?i)\b[ABCDEFGHJKLMNPRSTUVWXYZ\d]{17}\b`,
+      PtsDatePattern:      `(?i)паспорт\s+транспортного\s+средства[^\n\r\d]{0,80}(?:выдан|от)`,
+      BuyerCompanyPattern: `(?i)(покупатель|покупателя)[^\n\r]{0,120}`,
     },
   }
 }
@@ -80,45 +95,28 @@ func Load(path string) (Config, error) {
     return cfg, err
   }
 
-  // Merge fileCfg into defaults when non-empty
-  if fileCfg.UploadDir != "" {
-    cfg.UploadDir = fileCfg.UploadDir
-  }
-  if fileCfg.OutputExcel != "" {
-    cfg.OutputExcel = fileCfg.OutputExcel
-  }
-  if fileCfg.ExcelSheet != "" {
-    cfg.ExcelSheet = fileCfg.ExcelSheet
-  }
-  if fileCfg.Web.Address != "" {
-    cfg.Web.Address = fileCfg.Web.Address
-  }
+  // Merge simple fields
+  if fileCfg.UploadDir != "" { cfg.UploadDir = fileCfg.UploadDir }
+  if fileCfg.OutputExcel != "" { cfg.OutputExcel = fileCfg.OutputExcel }
+  if fileCfg.ExcelSheet != "" { cfg.ExcelSheet = fileCfg.ExcelSheet }
+  if fileCfg.Web.Address != "" { cfg.Web.Address = fileCfg.Web.Address }
 
-  // Patterns: if provided, override any non-empty
-  if fileCfg.Patterns.ContractDatePattern != "" {
-    cfg.Patterns.ContractDatePattern = fileCfg.Patterns.ContractDatePattern
-  }
-  if fileCfg.Patterns.ActDatePattern != "" {
-    cfg.Patterns.ActDatePattern = fileCfg.Patterns.ActDatePattern
-  }
-  if fileCfg.Patterns.BuyerLabelPattern != "" {
-    cfg.Patterns.BuyerLabelPattern = fileCfg.Patterns.BuyerLabelPattern
-  }
-  if fileCfg.Patterns.SellerLabelPattern != "" {
-    cfg.Patterns.SellerLabelPattern = fileCfg.Patterns.SellerLabelPattern
-  }
-  if fileCfg.Patterns.PoAFromPattern != "" {
-    cfg.Patterns.PoAFromPattern = fileCfg.Patterns.PoAFromPattern
-  }
-  if fileCfg.Patterns.PoAToPattern != "" {
-    cfg.Patterns.PoAToPattern = fileCfg.Patterns.PoAToPattern
-  }
-  if fileCfg.Patterns.DateRegex != "" {
-    cfg.Patterns.DateRegex = fileCfg.Patterns.DateRegex
-  }
-  if fileCfg.Patterns.NameRegex != "" {
-    cfg.Patterns.NameRegex = fileCfg.Patterns.NameRegex
-  }
+  // Merge patterns selectively if provided
+  if v := fileCfg.Patterns.ContractDatePattern; v != "" { cfg.Patterns.ContractDatePattern = v }
+  if v := fileCfg.Patterns.ActDatePattern; v != "" { cfg.Patterns.ActDatePattern = v }
+  if v := fileCfg.Patterns.BuyerLabelPattern; v != "" { cfg.Patterns.BuyerLabelPattern = v }
+  if v := fileCfg.Patterns.SellerLabelPattern; v != "" { cfg.Patterns.SellerLabelPattern = v }
+  if v := fileCfg.Patterns.PoAFromPattern; v != "" { cfg.Patterns.PoAFromPattern = v }
+  if v := fileCfg.Patterns.PoAToPattern; v != "" { cfg.Patterns.PoAToPattern = v }
+  if v := fileCfg.Patterns.DateRegex; v != "" { cfg.Patterns.DateRegex = v }
+  if v := fileCfg.Patterns.NameRegex; v != "" { cfg.Patterns.NameRegex = v }
+
+  if v := fileCfg.Patterns.AmountPattern; v != "" { cfg.Patterns.AmountPattern = v }
+  if v := fileCfg.Patterns.AmountRegex; v != "" { cfg.Patterns.AmountRegex = v }
+  if v := fileCfg.Patterns.VINPattern; v != "" { cfg.Patterns.VINPattern = v }
+  if v := fileCfg.Patterns.VINRegex; v != "" { cfg.Patterns.VINRegex = v }
+  if v := fileCfg.Patterns.PtsDatePattern; v != "" { cfg.Patterns.PtsDatePattern = v }
+  if v := fileCfg.Patterns.BuyerCompanyPattern; v != "" { cfg.Patterns.BuyerCompanyPattern = v }
 
   return cfg, nil
 } 

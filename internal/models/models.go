@@ -11,4 +11,10 @@ type ExtractedInfo struct {
   BuyerPoATo              string
   SellerPoAFrom           string
   SellerPoATo             string
+
+  // New fields
+  ContractAmountRubles     string
+  VehiclePassportIssueDate string
+  VIN                      string
+  BuyerCompany             string
 } 

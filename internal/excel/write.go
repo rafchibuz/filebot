@@ -31,6 +31,10 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
       "Доверенность покупателя до",
       "Доверенность продавца от",
       "Доверенность продавца до",
+      "Сумма договора (RUB)",
+      "Дата выдачи ПТС",
+      "VIN",
+      "Компания покупатель",
     }
     for i, h := range headers {
       cell, _ := excelize.CoordinatesToCellName(i+1, 1)
@@ -75,6 +79,10 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
     info.BuyerPoATo,
     info.SellerPoAFrom,
     info.SellerPoATo,
+    info.ContractAmountRubles,
+    info.VehiclePassportIssueDate,
+    info.VIN,
+    info.BuyerCompany,
   }
 
   for i, v := range values {
