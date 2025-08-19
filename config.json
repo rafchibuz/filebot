@@ -1,0 +1,18 @@
+{
+  "uploadDir": "uploads",
+  "outputExcel": "output.xlsx",
+  "excelSheet": "Data",
+  "web": {
+    "address": ":8080"
+  },
+  "patterns": {
+    "contractDatePattern": "(?i)договор[^\\n\\r\\d]{0,80}",
+    "actDatePattern": "(?i)акт[^\\n\\r\\d]{0,80}",
+    "buyerLabelPattern": "(?i)покупател[ья]:?",
+    "sellerLabelPattern": "(?i)продавц[а|е]:?",
+    "poaFromPattern": "(?i)доверенн(?:ость|ости|остью)[^\\n\\r]{0,80}от",
+    "poaToPattern": "(?i)действи[еия][^\\n\\r]{0,80}до",
+    "dateRegex": "(?m)(\\b\\d{2}[\\./-]\\d{2}[\\./-]\\d{4}\\b)",
+    "nameRegex": "(?m)([А-ЯЁ][а-яё]+(?:\\s+[А-ЯЁ][а-яё]+){0,2}(?:\\s+[А-ЯЁ]\\.[А-ЯЁ]\\.)?)"
+  }
+} 
