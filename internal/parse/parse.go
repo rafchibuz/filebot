@@ -52,6 +52,40 @@ func ParseFields(text string, cfg config.Config) models.ExtractedInfo {
   }
 }
 
+// ParseFirstFileFields focuses on extracting items that must come from the first file only.
+func ParseFirstFileFields(firstFileText string, cfg config.Config) (vin string, vehicleModel string, contractDate string, actDate string, sellerCompanyDKP string) {
+  t := NormalizeSpaces(firstFileText)
+
+  reDate := regexp.MustCompile(cfg.Patterns.DateRegex)
+  reVIN := regexp.MustCompile(cfg.Patterns.VINRegex)
+
+  vin = findAfterWithRegex(t, cfg.Patterns.VINPattern, reVIN)
+  contractDate = findDateNear(t, cfg.Patterns.ContractDatePattern, reDate)
+  actDate = findDateNear(t, cfg.Patterns.ActDatePattern, reDate)
+
+  // Vehicle model: capture second group of VehicleModelPattern if present
+  if m := regexp.MustCompile(cfg.Patterns.VehicleModelPattern).FindStringSubmatch(t); len(m) >= 3 {
+    vehicleModel = strings.TrimSpace(m[2])
+  }
+  // Seller company in DKP: capture second group
+  if m := regexp.MustCompile(cfg.Patterns.SellerCompanyDKPPattern).FindStringSubmatch(t); len(m) >= 3 {
+    sellerCompanyDKP = strings.TrimSpace(cleanCompanyTail(m[2]))
+  }
+  return
+}
+
+func cleanCompanyTail(s string) string {
+  s = strings.TrimSpace(s)
+  stops := []string{"ИНН", "КПП", "ОГРН", "адрес", "тел", "e-mail", "Эл. почта"}
+  stopIdx := len(s)
+  for _, stop := range stops {
+    if idx := strings.Index(strings.ToLower(s), strings.ToLower(stop)); idx > 0 && idx < stopIdx {
+      stopIdx = idx
+    }
+  }
+  return strings.TrimSpace(s[:stopIdx])
+}
+
 func findDateNear(text string, beforePattern string, reDate *regexp.Regexp) string {
   re := regexp.MustCompile(beforePattern + `[^\n\r\d]{0,60}` + reDate.String())
   if m := re.FindStringSubmatch(text); len(m) > 0 {
@@ -88,7 +122,6 @@ func findAfterWithRegex(text string, labelPattern string, target *regexp.Regexp)
       return strings.TrimSpace(v)
     }
   }
-  // fallback: anywhere in text
   if v := target.FindString(text); v != "" {
     return strings.TrimSpace(v)
   }
@@ -99,9 +132,7 @@ func findCompanyAfter(text string, labelPattern string) string {
   re := regexp.MustCompile(labelPattern + `[:\s\-–]*([^\n\r]{0,200})`)
   if m := re.FindStringSubmatch(text); len(m) >= 2 {
     line := strings.TrimSpace(m[1])
-    // Heuristics: strip leading words like ")" or quotes
     line = strings.Trim(line, ":;–- ")
-    // Stop at common trailing markers
     stopIdx := len(line)
     for _, stop := range []string{"ИНН", "КПП", "ОГРН", "адрес", "тел", "e-mail", "Эл. почта"} {
       if idx := strings.Index(strings.ToLower(line), strings.ToLower(stop)); idx > 0 && idx < stopIdx {

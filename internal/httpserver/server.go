@@ -79,7 +79,9 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
   var sourceNames []string
   var combinedText strings.Builder
 
-  for _, fh := range files {
+  var firstText string
+
+  for idx, fh := range files {
     if !strings.EqualFold(filepath.Ext(fh.Filename), ".pdf") {
       continue
     }
@@ -91,7 +93,6 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
     text, err := apppdf.ExtractTextFromPDF(savedPath)
     if err != nil {
-      // keep going, but note the error in the combined text
       combinedText.WriteString("\n\n[Ошибка извлечения текста из ")
       combinedText.WriteString(fh.Filename)
       combinedText.WriteString(": ")
@@ -102,12 +103,27 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
       combinedText.WriteString(fh.Filename)
       combinedText.WriteString(" ====\n")
       combinedText.WriteString(text)
+      if idx == 0 {
+        firstText = text
+      }
     }
 
     sourceNames = append(sourceNames, fh.Filename)
   }
 
+  // Extract fields from all files (legacy set)
   info := appparse.ParseFields(combinedText.String(), s.cfg)
+
+  // Overwrite with first-file-only fields
+  if firstText != "" {
+    vin, model, cdate, adate, sellerDKP := appparse.ParseFirstFileFields(firstText, s.cfg)
+    if vin != "" { info.VIN = vin }
+    if model != "" { info.VehicleModel = model }
+    if cdate != "" { info.ContractDate = cdate }
+    if adate != "" { info.ActDate = adate }
+    if sellerDKP != "" { info.SellerCompanyDKP = sellerDKP }
+  }
+
   info.SourceFiles = sourceNames
 
   if err := appexcel.AppendToExcel(info, s.cfg); err != nil {

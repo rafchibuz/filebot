@@ -35,6 +35,8 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
       "Дата выдачи ПТС",
       "VIN",
       "Компания покупатель",
+      "Модель",
+      "Продавец (ДКП)",
     }
     for i, h := range headers {
       cell, _ := excelize.CoordinatesToCellName(i+1, 1)
@@ -83,6 +85,8 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
     info.VehiclePassportIssueDate,
     info.VIN,
     info.BuyerCompany,
+    info.VehicleModel,
+    info.SellerCompanyDKP,
   }
 
   for i, v := range values {

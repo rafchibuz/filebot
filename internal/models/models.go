@@ -17,4 +17,6 @@ type ExtractedInfo struct {
   VehiclePassportIssueDate string
   VIN                      string
   BuyerCompany             string
+  VehicleModel             string
+  SellerCompanyDKP         string
 } 

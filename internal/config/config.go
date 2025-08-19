@@ -38,6 +38,8 @@ type Patterns struct {
   VINRegex            string `json:"vinRegex"`
   PtsDatePattern      string `json:"ptsDatePattern"`
   BuyerCompanyPattern string `json:"buyerCompanyPattern"`
+  VehicleModelPattern string `json:"vehicleModelPattern"`
+  SellerCompanyDKPPattern string `json:"sellerCompanyDKPPattern"`
 }
 
 // Default returns the built-in defaults used if config.json is missing or partial.
@@ -65,6 +67,8 @@ func Default() Config {
       VINRegex:            `(?i)\b[ABCDEFGHJKLMNPRSTUVWXYZ\d]{17}\b`,
       PtsDatePattern:      `(?i)паспорт\s+транспортного\s+средства[^\n\r\d]{0,80}(?:выдан|от)`,
       BuyerCompanyPattern: `(?i)(покупатель|покупателя)[^\n\r]{0,120}`,
+      VehicleModelPattern: `(?i)(модель|model)[:\s-]*([^\n\r]{1,80})`,
+      SellerCompanyDKPPattern: `(?i)(продавец|продавца)[^\n\r]{0,10}[:\s-]*([^\n\r]{1,160})`,
     },
   }
 }
@@ -117,6 +121,8 @@ func Load(path string) (Config, error) {
   if v := fileCfg.Patterns.VINRegex; v != "" { cfg.Patterns.VINRegex = v }
   if v := fileCfg.Patterns.PtsDatePattern; v != "" { cfg.Patterns.PtsDatePattern = v }
   if v := fileCfg.Patterns.BuyerCompanyPattern; v != "" { cfg.Patterns.BuyerCompanyPattern = v }
+  if v := fileCfg.Patterns.VehicleModelPattern; v != "" { cfg.Patterns.VehicleModelPattern = v }
+  if v := fileCfg.Patterns.SellerCompanyDKPPattern; v != "" { cfg.Patterns.SellerCompanyDKPPattern = v }
 
   return cfg, nil
 } 
