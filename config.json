@@ -14,9 +14,9 @@
     "sellerCompanyDKPPattern": "(?i)(продавец|продавца)[^\\n\\r]{0,10}[:\\s-]*([^\\n\\r]{1,200})"
   },
   "ocr": {
-    "enabled": false,
+    "enabled": true,
     "lang": "rus+eng",
     "dpi": 300,
-    "pdftoppmPath": ""
+    "pdftoppmPath": "C:\\Users\\rafchibus\\filebot\\poppler-25.07.0\\Library\\bin\\pdftoppm.exe"
   }
 } 
