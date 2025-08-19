@@ -76,15 +76,12 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  var sourceNames []string
-  var combinedText strings.Builder
-
+  // Read only the first file text
   var firstText string
-
   for idx, fh := range files {
-    if !strings.EqualFold(filepath.Ext(fh.Filename), ".pdf") {
-      continue
-    }
+    if idx > 0 { break }
+    if !strings.EqualFold(filepath.Ext(fh.Filename), ".pdf") { continue }
+
     savedPath, err := s.saveUploadedFile(fh)
     if err != nil {
       http.Error(w, fmt.Sprintf("ошибка сохранения %s: %v", fh.Filename, err), http.StatusInternalServerError)
@@ -93,38 +90,13 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
     text, err := apppdf.ExtractTextFromPDF(savedPath)
     if err != nil {
-      combinedText.WriteString("\n\n[Ошибка извлечения текста из ")
-      combinedText.WriteString(fh.Filename)
-      combinedText.WriteString(": ")
-      combinedText.WriteString(err.Error())
-      combinedText.WriteString("]\n")
-    } else {
-      combinedText.WriteString("\n\n==== ")
-      combinedText.WriteString(fh.Filename)
-      combinedText.WriteString(" ====\n")
-      combinedText.WriteString(text)
-      if idx == 0 {
-        firstText = text
-      }
+      http.Error(w, fmt.Sprintf("ошибка извлечения текста из %s: %v", fh.Filename, err), http.StatusBadRequest)
+      return
     }
-
-    sourceNames = append(sourceNames, fh.Filename)
+    firstText = text
   }
 
-  // Extract fields from all files (legacy set)
-  info := appparse.ParseFields(combinedText.String(), s.cfg)
-
-  // Overwrite with first-file-only fields
-  if firstText != "" {
-    vin, model, cdate, adate, sellerDKP := appparse.ParseFirstFileFields(firstText, s.cfg)
-    if vin != "" { info.VIN = vin }
-    if model != "" { info.VehicleModel = model }
-    if cdate != "" { info.ContractDate = cdate }
-    if adate != "" { info.ActDate = adate }
-    if sellerDKP != "" { info.SellerCompanyDKP = sellerDKP }
-  }
-
-  info.SourceFiles = sourceNames
+  info := appparse.ParseFirstFileOnly(firstText, s.cfg)
 
   if err := appexcel.AppendToExcel(info, s.cfg); err != nil {
     http.Error(w, fmt.Sprintf("не удалось записать в Excel: %v", err), http.StatusInternalServerError)
@@ -141,21 +113,15 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) saveUploadedFile(fh *multipart.FileHeader) (string, error) {
   f, err := fh.Open()
-  if err != nil {
-    return "", err
-  }
+  if err != nil { return "", err }
   defer f.Close()
 
   dst := filepath.Join(s.cfg.UploadDir, sanitizeFilename(fh.Filename))
   out, err := os.Create(dst)
-  if err != nil {
-    return "", err
-  }
+  if err != nil { return "", err }
   defer out.Close()
 
-  if _, err := io.Copy(out, f); err != nil {
-    return "", err
-  }
+  if _, err := io.Copy(out, f); err != nil { return "", err }
   return dst, nil
 }
 

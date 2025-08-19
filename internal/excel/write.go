@@ -3,8 +3,6 @@ package excel
 import (
   "errors"
   "os"
-  "sort"
-  "strings"
 
   "github.com/xuri/excelize/v2"
 
@@ -22,21 +20,11 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
     idx, _ := f.NewSheet(cfg.ExcelSheet)
     f.SetActiveSheet(idx)
     headers := []string{
-      "Источник файлов",
-      "Дата договора",
-      "Дата акта",
-      "Представитель покупателя",
-      "Представитель продавца",
-      "Доверенность покупателя от",
-      "Доверенность покупателя до",
-      "Доверенность продавца от",
-      "Доверенность продавца до",
-      "Сумма договора (RUB)",
-      "Дата выдачи ПТС",
       "VIN",
-      "Компания покупатель",
       "Модель",
-      "Продавец (ДКП)",
+      "Дата ДКП",
+      "Дата акта приема-передачи",
+      "Наименование продавца (ДКП)",
     }
     for i, h := range headers {
       cell, _ := excelize.CoordinatesToCellName(i+1, 1)
@@ -67,25 +55,11 @@ func AppendToExcel(info models.ExtractedInfo, cfg config.Config) error {
   }
   nextRow := len(rows) + 1
 
-  sorted := append([]string(nil), info.SourceFiles...)
-  sort.Strings(sorted)
-  source := strings.Join(sorted, "; ")
-
   values := []any{
-    source,
+    info.VIN,
+    info.VehicleModel,
     info.ContractDate,
     info.ActDate,
-    info.BuyerRepresentative,
-    info.SellerRepresentative,
-    info.BuyerPoAFrom,
-    info.BuyerPoATo,
-    info.SellerPoAFrom,
-    info.SellerPoATo,
-    info.ContractAmountRubles,
-    info.VehiclePassportIssueDate,
-    info.VIN,
-    info.BuyerCompany,
-    info.VehicleModel,
     info.SellerCompanyDKP,
   }
 

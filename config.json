@@ -2,25 +2,15 @@
   "uploadDir": "uploads",
   "outputExcel": "output.xlsx",
   "excelSheet": "Data",
-  "web": {
-    "address": ":8080"
-  },
+  "web": { "address": ":8080" },
   "patterns": {
     "contractDatePattern": "(?i)договор[^\\n\\r\\d]{0,80}",
     "actDatePattern": "(?i)акт[^\\n\\r\\d]{0,80}",
-    "buyerLabelPattern": "(?i)покупател[ья]:?",
-    "sellerLabelPattern": "(?i)продавц[а|е]:?",
-    "poaFromPattern": "(?i)доверенн(?:ость|ости|остью)[^\\n\\r]{0,80}от",
-    "poaToPattern": "(?i)действи[еия][^\\n\\r]{0,80}до",
-
     "dateRegex": "(?m)(\\b\\d{2}[\\./-]\\d{2}[\\./-]\\d{4}\\b)",
-    "nameRegex": "(?m)([А-ЯЁ][а-яё]+(?:\\s+[А-ЯЁ][а-яё]+){0,2}(?:\\s+[А-ЯЁ]\\.[А-ЯЁ]\\.)?)",
 
-    "amountPattern": "(?i)общая\\s+сумма\\s+договора[^\\n\\r\\d]{0,80}",
-    "amountRegex": "(?m)(\\b\\d{1,3}(?:[\\s\\u00a0]\\d{3})*(?:[\\.,]\\d{2})\\b)",
     "vinPattern": "(?i)vin[:\\s-]*",
     "vinRegex": "(?i)\\b[ABCDEFGHJKLMNPRSTUVWXYZ\\d]{17}\\b",
-    "ptsDatePattern": "(?i)паспорт\\s+транспортного\\s+средства[^\\n\\r\\d]{0,80}(?:выдан|от)",
-    "buyerCompanyPattern": "(?i)(покупатель|покупателя)[^\\n\\r]{0,120}"
+    "vehicleModelPattern": "(?i)(модель|model)[:\\s-]*([^\\n\\r]{1,80})",
+    "sellerCompanyDKPPattern": "(?i)(продавец|продавца)[^\\n\\r]{0,10}[:\\s-]*([^\\n\\r]{1,160})"
   }
 } 

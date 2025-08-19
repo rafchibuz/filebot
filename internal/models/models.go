@@ -1,22 +1,10 @@
 package models
 
-// ExtractedInfo holds the structured data we capture from PDFs and save to Excel.
+// ExtractedInfo holds the structured data we capture from the first PDF.
 type ExtractedInfo struct {
-  SourceFiles              []string
-  ContractDate             string
-  ActDate                  string
-  BuyerRepresentative      string
-  SellerRepresentative     string
-  BuyerPoAFrom            string
-  BuyerPoATo              string
-  SellerPoAFrom           string
-  SellerPoATo             string
-
-  // New fields
-  ContractAmountRubles     string
-  VehiclePassportIssueDate string
-  VIN                      string
-  BuyerCompany             string
-  VehicleModel             string
-  SellerCompanyDKP         string
+  VIN              string
+  VehicleModel     string
+  ContractDate     string
+  ActDate          string
+  SellerCompanyDKP string
 } 
