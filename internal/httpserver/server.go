@@ -87,7 +87,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
       return
     }
 
-    text, err := apppdf.ExtractTextFromPDF(savedPath)
+    text, err := apppdf.ExtractText(savedPath, s.cfg)
     if err != nil {
       http.Error(w, fmt.Sprintf("ошибка извлечения текста из %s: %v", fh.Filename, err), http.StatusBadRequest)
       return

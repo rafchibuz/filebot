@@ -15,6 +15,7 @@ type Config struct {
   ExcelSheet  string   `json:"excelSheet"`
   Web         Web      `json:"web"`
   Patterns    Patterns `json:"patterns"`
+  Ocr         Ocr      `json:"ocr"`
 }
 
 type Web struct {
@@ -30,6 +31,13 @@ type Patterns struct {
   VINRegex         string `json:"vinRegex"`
   CommercialNamePattern string `json:"commercialNamePattern"`
   SellerCompanyDKPPattern string `json:"sellerCompanyDKPPattern"`
+}
+
+type Ocr struct {
+  Enabled       bool   `json:"enabled"`
+  Lang          string `json:"lang"`          // e.g. "rus+eng"
+  Dpi           int    `json:"dpi"`           // image DPI for pdftoppm
+  PdftoppmPath  string `json:"pdftoppmPath"`  // optional full path to pdftoppm
 }
 
 // Default returns the built-in defaults used if config.json is missing or partial.
@@ -49,6 +57,12 @@ func Default() Config {
 
       CommercialNamePattern: `(?i)(коммерческое\s+наименование)[:\s-]*([^\n\r]{1,120})`,
       SellerCompanyDKPPattern: `(?i)(продавец|продавца)[^\n\r]{0,10}[:\s-]*([^\n\r]{1,200})`,
+    },
+    Ocr: Ocr{
+      Enabled:      false,
+      Lang:         "rus+eng",
+      Dpi:          300,
+      PdftoppmPath: "",
     },
   }
 }
@@ -79,6 +93,12 @@ func Load(path string) (Config, error) {
   if v := fileCfg.Patterns.VINRegex; v != "" { cfg.Patterns.VINRegex = v }
   if v := fileCfg.Patterns.CommercialNamePattern; v != "" { cfg.Patterns.CommercialNamePattern = v }
   if v := fileCfg.Patterns.SellerCompanyDKPPattern; v != "" { cfg.Patterns.SellerCompanyDKPPattern = v }
+
+  // Merge OCR
+  cfg.Ocr.Enabled = fileCfg.Ocr.Enabled
+  if fileCfg.Ocr.Lang != "" { cfg.Ocr.Lang = fileCfg.Ocr.Lang }
+  if fileCfg.Ocr.Dpi != 0 { cfg.Ocr.Dpi = fileCfg.Ocr.Dpi }
+  if fileCfg.Ocr.PdftoppmPath != "" { cfg.Ocr.PdftoppmPath = fileCfg.Ocr.PdftoppmPath }
 
   return cfg, nil
 } 

@@ -12,5 +12,11 @@
 
     "commercialNamePattern": "(?i)(коммерческое\\s+наименование)[:\\s-]*([^\\n\\r]{1,120})",
     "sellerCompanyDKPPattern": "(?i)(продавец|продавца)[^\\n\\r]{0,10}[:\\s-]*([^\\n\\r]{1,200})"
+  },
+  "ocr": {
+    "enabled": false,
+    "lang": "rus+eng",
+    "dpi": 300,
+    "pdftoppmPath": ""
   }
 } 
