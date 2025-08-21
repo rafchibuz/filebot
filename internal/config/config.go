@@ -1,104 +1,126 @@
 package config
 
 import (
-  "encoding/json"
-  "errors"
-  "os"
-  "path/filepath"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
 )
 
-// Config defines application configuration loaded from config.json
-// Fields are designed to be simple and overridable by the JSON file.
+// Config содержит все настройки приложения
 type Config struct {
-  UploadDir   string   `json:"uploadDir"`
-  OutputExcel string   `json:"outputExcel"`
-  ExcelSheet  string   `json:"excelSheet"`
-  Web         Web      `json:"web"`
-  Patterns    Patterns `json:"patterns"`
-  Ocr         Ocr      `json:"ocr"`
+	Server   ServerConfig
+	Database DatabaseConfig
+	Cache    CacheConfig
+	Kafka    KafkaConfig
 }
 
-type Web struct {
-  Address string `json:"address"`
+// ServerConfig настройки HTTP сервера
+type ServerConfig struct {
+	Port         string
+	ReadTimeout  int
+	WriteTimeout int
 }
 
-type Patterns struct {
-  ContractDateContextPattern string `json:"contractDateContextPattern"`
-  // Date regex that matches dd.mm.yyyy, dd/mm/yyyy, and "23 августа 2024"
-  DateRegex string `json:"dateRegex"`
-
-  VINPattern       string `json:"vinPattern"`
-  VINRegex         string `json:"vinRegex"`
-  CommercialNamePattern string `json:"commercialNamePattern"`
-  SellerCompanyDKPPattern string `json:"sellerCompanyDKPPattern"`
+// DatabaseConfig настройки подключения к базе данных
+type DatabaseConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
 }
 
-type Ocr struct {
-  Enabled       bool   `json:"enabled"`
-  Lang          string `json:"lang"`          // e.g. "rus+eng"
-  Dpi           int    `json:"dpi"`           // image DPI for pdftoppm
-  PdftoppmPath  string `json:"pdftoppmPath"`  // optional full path to pdftoppm
+// CacheConfig настройки кеширования
+type CacheConfig struct {
+	Enabled    bool
+	MaxEntries int
 }
 
-// Default returns the built-in defaults used if config.json is missing or partial.
-func Default() Config {
-  return Config{
-    UploadDir:   "uploads",
-    OutputExcel: "output.xlsx",
-    ExcelSheet:  "Data",
-    Web: Web{ Address: ":8080" },
-    Patterns: Patterns{
-      // Контекст вокруг даты ДКП (ищем дату рядом с упоминанием договора лизинга или ДКП)
-      ContractDateContextPattern: `(?i)(договор[а-я\s-]*лизинга|дкп|договор\s+купли-?продажи)[^\n\r\d]{0,120}`,
-      DateRegex: `(?m)(\b\d{1,2}[\./-]\d{1,2}[\./-]\d{2,4}\b|\b\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+\d{4}\b)`,
-
-      VINPattern: `(?i)vin[:\s-]*`,
-      VINRegex:   `(?i)\b[ABCDEFGHJKLMNPRSTUVWXYZ\d]{17}\b`,
-
-      CommercialNamePattern: `(?i)(коммерческое\s+наименование)[:\s-]*([^\n\r]{1,120})`,
-      SellerCompanyDKPPattern: `(?i)(продавец|продавца)[^\n\r]{0,10}[:\s-]*([^\n\r]{1,200})`,
-    },
-    Ocr: Ocr{
-      Enabled:      false,
-      Lang:         "rus+eng",
-      Dpi:          300,
-      PdftoppmPath: "",
-    },
-  }
+// KafkaConfig настройки Kafka
+type KafkaConfig struct {
+	Brokers []string
+	Topic   string
+	GroupID string
+	Enabled bool
 }
 
-// Load reads configuration from config.json in the working directory.
-// If the file is missing, defaults are returned.
-func Load(path string) (Config, error) {
-  cfg := Default()
-  if path == "" { path = "config.json" }
-  if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) { return cfg, nil }
+// Load загружает конфигурацию из переменных окружения
+func Load() *Config {
+	return &Config{
+		Server: ServerConfig{
+			Port:         getEnv("PORT", "8081"),
+			ReadTimeout:  getEnvAsInt("READ_TIMEOUT", 10),
+			WriteTimeout: getEnvAsInt("WRITE_TIMEOUT", 10),
+		},
+		Database: DatabaseConfig{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnvAsInt("DB_PORT", 5432),
+			User:     getEnv("DB_USER", "wb_user"),
+			Password: getEnv("DB_PASSWORD", "wb_password"),
+			DBName:   getEnv("DB_NAME", "wildberries_orders"),
+			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+		},
+		Cache: CacheConfig{
+			Enabled:    getEnvAsBool("CACHE_ENABLED", true),
+			MaxEntries: getEnvAsInt("CACHE_MAX_ENTRIES", 1000),
+		},
+		Kafka: KafkaConfig{
+			Brokers: getEnvAsSlice("KAFKA_BROKERS", []string{"localhost:9092"}),
+			Topic:   getEnv("KAFKA_TOPIC", "orders"),
+			GroupID: getEnv("KAFKA_GROUP_ID", "wildberries-order-service"),
+			Enabled: getEnvAsBool("KAFKA_ENABLED", true),
+		},
+	}
+}
 
-  f, err := os.Open(filepath.Clean(path))
-  if err != nil { return cfg, err }
-  defer f.Close()
+// GetDSN возвращает строку подключения к PostgreSQL
+func (c *DatabaseConfig) GetDSN() string {
+	return fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode,
+	)
+}
 
-  dec := json.NewDecoder(f)
-  var fileCfg Config
-  if err := dec.Decode(&fileCfg); err != nil { return cfg, err }
+// GetConnectionString возвращает строку подключения в формате URL
+func (c *DatabaseConfig) GetConnectionString() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		c.User, c.Password, c.Host, c.Port, c.DBName, c.SSLMode,
+	)
+}
 
-  if fileCfg.UploadDir != "" { cfg.UploadDir = fileCfg.UploadDir }
-  if fileCfg.OutputExcel != "" { cfg.OutputExcel = fileCfg.OutputExcel }
-  if fileCfg.ExcelSheet != "" { cfg.ExcelSheet = fileCfg.ExcelSheet }
-  if fileCfg.Web.Address != "" { cfg.Web.Address = fileCfg.Web.Address }
+// Вспомогательные функции для работы с переменными окружения
 
-  if v := fileCfg.Patterns.ContractDateContextPattern; v != "" { cfg.Patterns.ContractDateContextPattern = v }
-  if v := fileCfg.Patterns.DateRegex; v != "" { cfg.Patterns.DateRegex = v }
-  if v := fileCfg.Patterns.VINPattern; v != "" { cfg.Patterns.VINPattern = v }
-  if v := fileCfg.Patterns.VINRegex; v != "" { cfg.Patterns.VINRegex = v }
-  if v := fileCfg.Patterns.CommercialNamePattern; v != "" { cfg.Patterns.CommercialNamePattern = v }
-  if v := fileCfg.Patterns.SellerCompanyDKPPattern; v != "" { cfg.Patterns.SellerCompanyDKPPattern = v }
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
 
-  // Merge OCR
-  cfg.Ocr.Enabled = fileCfg.Ocr.Enabled
-  if fileCfg.Ocr.Lang != "" { cfg.Ocr.Lang = fileCfg.Ocr.Lang }
-  if fileCfg.Ocr.Dpi != 0 { cfg.Ocr.Dpi = fileCfg.Ocr.Dpi }
-  if fileCfg.Ocr.PdftoppmPath != "" { cfg.Ocr.PdftoppmPath = fileCfg.Ocr.PdftoppmPath }
+func getEnvAsInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
+}
 
-  return cfg, nil
+func getEnvAsBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			return boolValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsSlice(key string, defaultValue []string) []string {
+	if value := os.Getenv(key); value != "" {
+		return strings.Split(value, ",")
+	}
+	return defaultValue
 } 
