@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:15-alpine
+    container_name: wb_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wildberries_orders
+      POSTGRES_USER: wb_user
+      POSTGRES_PASSWORD: wb_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d/
+    networks:
+      - wb_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wb_user -d wildberries_orders"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # pgAdmin для удобного управления БД (опционально)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: wb_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@wildberries.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - wb_network
+    depends_on:
+      - postgres
+
+  # Наше Go приложение (опционально, для полной контейнеризации)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wb_app
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=wb_user
+      - DB_PASSWORD=wb_password
+      - DB_NAME=wildberries_orders
+      - DB_SSLMODE=disable
+    networks:
+      - wb_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - full  # Запускать только при указании профиля
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  wb_network:
+    driver: bridge

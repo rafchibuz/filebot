@@ -7,14 +7,46 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/joho/godotenv"
+	"wildberries-order-service/internal/config"
 	"wildberries-order-service/internal/handlers"
+	"wildberries-order-service/internal/models"
 	"wildberries-order-service/internal/repository"
 	"wildberries-order-service/internal/service"
 )
 
 func main() {
-	// Инициализация зависимостей
-	orderRepo := repository.NewMemoryOrderRepository()
+	// Загружаем переменные окружения из .env файла
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using system environment variables")
+	}
+	
+	// Загружаем конфигурацию
+	cfg := config.Load()
+	
+	// Инициализация репозитория
+	var orderRepo models.OrderRepository
+	var err error
+	
+	// Пробуем подключиться к PostgreSQL, если не получается - используем memory
+	postgresRepo, err := repository.NewPostgresOrderRepository(cfg.Database.GetConnectionString())
+	if err != nil {
+		log.Printf("⚠️  Failed to connect to PostgreSQL: %v", err)
+		log.Println("🔄 Falling back to memory repository")
+		orderRepo = repository.NewMemoryOrderRepository()
+	} else {
+		log.Println("🐘 Using PostgreSQL repository")
+		orderRepo = postgresRepo
+		
+		// Настраиваем graceful shutdown для PostgreSQL
+		defer func() {
+			if pgRepo, ok := postgresRepo.(*repository.PostgresOrderRepository); ok {
+				pgRepo.Close()
+			}
+		}()
+	}
+	
+	// Инициализация сервиса
 	orderService := service.NewOrderService(orderRepo)
 	
 	// Создание обработчиков
@@ -25,13 +57,14 @@ func main() {
 	setupRoutes(orderHandler, webHandler)
 	
 	// Запуск сервера
-	port := getPort()
+	port := cfg.Server.Port
 	log.Printf("🚀 Сервер запускается на порту %s", port)
 	log.Printf("📱 Веб-интерфейс: http://localhost:%s", port)
 	log.Printf("🔍 API endpoint: http://localhost:%s/order/{order_id}", port)
 	log.Printf("📋 Все заказы: http://localhost:%s/orders", port)
 	log.Printf("❤️  Health check: http://localhost:%s/health", port)
 	log.Printf("📝 Тестовый заказ: b563feb7b2b84b6test")
+	log.Printf("🗄️  Database: %s:%d", cfg.Database.Host, cfg.Database.Port)
 	
 	// Graceful shutdown
 	setupGracefulShutdown()
