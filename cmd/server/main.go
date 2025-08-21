@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"wildberries-order-service/internal/config"
 	"wildberries-order-service/internal/handlers"
+	"wildberries-order-service/internal/kafka"
 	"wildberries-order-service/internal/models"
 	"wildberries-order-service/internal/repository"
 	"wildberries-order-service/internal/service"
@@ -48,6 +49,21 @@ func main() {
 	
 	// Инициализация сервиса
 	orderService := service.NewOrderService(orderRepo)
+	
+	// Инициализация Kafka consumer
+	kafkaConsumer, err := kafka.NewConsumer(&cfg.Kafka, orderService)
+	if err != nil {
+		log.Printf("⚠️  Failed to create Kafka consumer: %v", err)
+		log.Println("🔄 Continuing without Kafka consumer")
+	} else if kafkaConsumer != nil {
+		// Запускаем consumer
+		if err := kafkaConsumer.Start(); err != nil {
+			log.Printf("⚠️  Failed to start Kafka consumer: %v", err)
+		}
+		
+		// Настраиваем graceful shutdown для Kafka
+		defer kafkaConsumer.Stop()
+	}
 	
 	// Создание обработчиков
 	orderHandler := handlers.NewOrderHandler(orderService)
