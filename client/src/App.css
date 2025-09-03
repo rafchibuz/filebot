@@ -1,0 +1,120 @@
+/* Custom styles for Twitch Clips Aggregator */
+
+.App {
+  text-align: center;
+}
+
+/* Smooth animations */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #18181b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9146ff;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7c3aed;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Clip card hover effects */
+.clip-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.clip-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(145, 70, 255, 0.3);
+}
+
+/* Video player overlay */
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.video-overlay:hover {
+  opacity: 1;
+}
+
+/* Stats cards */
+.stats-card {
+  background: linear-gradient(135deg, rgba(145, 70, 255, 0.1) 0%, rgba(245, 0, 87, 0.1) 100%);
+  border: 1px solid rgba(145, 70, 255, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .MuiContainer-root {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  .filter-panel {
+    padding: 16px;
+  }
+  
+  .clip-card {
+    margin-bottom: 16px;
+  }
+}
+
+/* Custom chip styles */
+.streamer-chip {
+  background: linear-gradient(45deg, #9146ff 30%, #f50057 90%);
+  color: white;
+  font-weight: bold;
+}
+
+/* Animation for new clips */
+@keyframes slideInFromTop {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.new-clip {
+  animation: slideInFromTop 0.5s ease-out;
+}
