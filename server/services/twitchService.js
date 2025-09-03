@@ -15,6 +15,15 @@ class TwitchService {
       return this.accessToken;
     }
 
+    // Проверяем наличие API ключей
+    if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+      throw new Error('❌ TWITCH_CLIENT_ID и TWITCH_CLIENT_SECRET должны быть настроены в .env файле');
+    }
+
+    if (process.env.TWITCH_CLIENT_ID === 'your_client_id_here') {
+      throw new Error('❌ Пожалуйста, замените your_client_id_here на ваш реальный Client ID в .env файле');
+    }
+
     try {
       const response = await axios.post('https://id.twitch.tv/oauth2/token', {
         client_id: process.env.TWITCH_CLIENT_ID,

@@ -40,12 +40,25 @@ function App() {
     try {
       setLoading(true);
       setError(null);
+      console.log('🔍 Загружаем клипы с фильтрами:', filters);
+      
       const data = await clipsAPI.getClips(filters);
-      setClips(data.clips);
-      setStats(data.stats);
+      console.log('📦 Получены данные:', data);
+      
+      setClips(data.clips || []);
+      setStats(data.stats || []);
+      
+      if (!data.clips || data.clips.length === 0) {
+        console.warn('⚠️ Клипы не найдены');
+      }
     } catch (err) {
-      setError('Ошибка загрузки клипов: ' + err.message);
-      console.error('Ошибка загрузки клипов:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Неизвестная ошибка';
+      setError('Ошибка загрузки клипов: ' + errorMessage);
+      console.error('❌ Ошибка загрузки клипов:', err);
+      
+      // Устанавливаем пустые массивы при ошибке
+      setClips([]);
+      setStats([]);
     } finally {
       setLoading(false);
     }

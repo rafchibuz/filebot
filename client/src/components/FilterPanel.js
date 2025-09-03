@@ -27,6 +27,12 @@ function FilterPanel({ filters, onFilterChange, onRefresh, loading }) {
         setStreamers(streamersData);
       } catch (error) {
         console.error('Ошибка загрузки стримеров:', error);
+        // Fallback - используем стандартный список стримеров
+        setStreamers([
+          { streamer_login: 'RavshanN', streamer_display_name: 'RavshanN' },
+          { streamer_login: 'steel', streamer_display_name: 'steel' },
+          { streamer_login: 'renatko', streamer_display_name: 'renatko' }
+        ]);
       }
     };
     loadStreamers();
