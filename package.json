@@ -1,0 +1,28 @@
+{
+  "name": "twitch-clips-aggregator",
+  "version": "1.0.0",
+  "description": "Агрегатор клипов популярных стримеров с сортировкой по времени",
+  "main": "server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon server/server.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd client && npm install"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "node-cron": "^3.0.3",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["twitch", "clips", "streamer", "aggregator"],
+  "author": "Your Name",
+  "license": "MIT"
+}
